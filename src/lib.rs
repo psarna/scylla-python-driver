@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 #[pyclass]
 struct Cluster {
-    addr: String,
+    addrs: Vec<String>,
 }
 
 #[pyclass]
@@ -17,17 +17,17 @@ struct Session {
 #[pymethods]
 impl Cluster {
     #[new]
-    fn new(addr: String) -> Self {
-        Cluster { addr }
+    fn new(addrs: Vec<String>) -> Self {
+        Cluster { addrs }
     }
 
     fn connect<'p>(slf: PyRefMut<'p, Self>, py: Python<'p>) -> PyResult<&'p PyAny> {
-        let addr = slf.addr.clone();
+        let addrs = slf.addrs.clone();
         pyo3_asyncio::tokio::future_into_py(py, async move {
             Ok(Session {
                 session: Arc::new(
                     SessionBuilder::new()
-                        .known_node(addr)
+                        .known_nodes(&addrs)
                         .build()
                         .await
                         .unwrap(),
