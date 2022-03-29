@@ -3,38 +3,56 @@ use pyo3::prelude::*;
 use lazy_static::lazy_static;
 use tokio::runtime::Runtime;
 
-use scylla::transport::session::Session;
+use scylla::transport::session;
 use scylla::SessionBuilder;
+use std::sync::Arc;
 
 lazy_static! {
     pub static ref RUNTIME: Runtime = Runtime::new().unwrap();
 }
 
-async fn connect_and_print_table_info() -> PyResult<String> {
-    let session: Session = SessionBuilder::new()
-        .known_node("127.0.0.1:9042".to_string())
-        .build()
-        .await
-        .unwrap();
-    let res = session
-        .query(
-            "SELECT keyspace_name, table_name FROM system_schema.tables",
-            &[],
-        )
-        .await
-        .unwrap();
-    Ok(format!("{:?}", res))
+#[pyclass]
+struct Cluster {
+    addr: String,
 }
 
-/// Formats the sum of two numbers as string.
-#[pyfunction]
-fn smoke_test<'p>(py: Python<'p>) -> PyResult<&'p PyAny> {
-    pyo3_asyncio::tokio::future_into_py(py, async move { connect_and_print_table_info().await })
+#[pyclass]
+struct Session {
+    session: Arc<session::Session>,
+}
+
+#[pymethods]
+impl Cluster {
+    #[new]
+    fn new(addr: String) -> Self {
+        Cluster { addr }
+    }
+
+    fn connect<'p>(slf: PyRefMut<'p, Self>, py: Python<'p>) -> PyResult<&'p PyAny> {
+        let addr = slf.addr.clone();
+        pyo3_asyncio::tokio::future_into_py(py, async move {
+            Ok(Session {
+                session: Arc::new(SessionBuilder::new().known_node(addr).build().await.unwrap()),
+            })
+        })
+    }
+}
+
+#[pymethods]
+impl Session {
+    fn execute<'p>(slf: PyRefMut<'p, Self>, py: Python<'p>, query_str: String) -> PyResult<&'p PyAny> {
+        let session = slf.session.clone();
+        pyo3_asyncio::tokio::future_into_py(py, async move {
+            let res = session.query(query_str, &[]).await.unwrap();
+            Ok(format!("{:?}", res))
+        })
+    }
 }
 
 /// A Python module implemented in Rust.
 #[pymodule]
 fn better_python_driver(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(smoke_test, m)?)?;
+    m.add_class::<Cluster>()?;
+    m.add_class::<Session>()?;
     Ok(())
 }

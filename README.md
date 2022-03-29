@@ -3,21 +3,28 @@
 1. Run scylla
 2. Set up virtualenv, e.g. in `~/local/venv` directory
 3. Enter the virtual env via `. ~/local/venv/bin/activate`
-3. Run:
+4. Run:
  ```bash
   pip install --user maturin
   mkdir -p ~/local/venv
   VIRTUALENV=~/local/venv maturin develop
  ```
-4. Run the example python code which calls Rust bindings - it works!
+5. Run the example python code - it works!
+```bash
+  python example.py
+```
+
+Here's the example code:
  ```python
 import asyncio
-import better_python_driver
+from better_python_driver import Session, Cluster
 
 async def run():
     print("Running better python driver smoke test")
-    x = await better_python_driver.smoke_test()
-    print(f"Result: {x}")
+    cluster = Cluster("127.0.0.1")
+    session = await cluster.connect()
+    res = await session.execute("SELECT keyspace_name, table_name FROM system_schema.tables")
+    print(f"Result: {res}")
 
 asyncio.run(run())
  ```
