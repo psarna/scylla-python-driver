@@ -7,7 +7,9 @@
  ```bash
   pip install --user maturin
   mkdir -p ~/local/venv
-  VIRTUALENV=~/local/venv maturin develop
+  virtualenv ~/local/venv
+  . ~/local/venv/bin/activate
+  maturin develop
  ```
 5. Run the example python code - it works!
 ```bash
