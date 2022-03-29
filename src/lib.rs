@@ -1,15 +1,8 @@
 use pyo3::prelude::*;
 
-use lazy_static::lazy_static;
-use tokio::runtime::Runtime;
-
 use scylla::transport::session;
 use scylla::SessionBuilder;
 use std::sync::Arc;
-
-lazy_static! {
-    pub static ref RUNTIME: Runtime = Runtime::new().unwrap();
-}
 
 #[pyclass]
 struct Cluster {
