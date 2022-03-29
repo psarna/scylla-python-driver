@@ -25,7 +25,13 @@ impl Cluster {
         let addr = slf.addr.clone();
         pyo3_asyncio::tokio::future_into_py(py, async move {
             Ok(Session {
-                session: Arc::new(SessionBuilder::new().known_node(addr).build().await.unwrap()),
+                session: Arc::new(
+                    SessionBuilder::new()
+                        .known_node(addr)
+                        .build()
+                        .await
+                        .unwrap(),
+                ),
             })
         })
     }
@@ -33,7 +39,11 @@ impl Cluster {
 
 #[pymethods]
 impl Session {
-    fn execute<'p>(slf: PyRefMut<'p, Self>, py: Python<'p>, query_str: String) -> PyResult<&'p PyAny> {
+    fn execute<'p>(
+        slf: PyRefMut<'p, Self>,
+        py: Python<'p>,
+        query_str: String,
+    ) -> PyResult<&'p PyAny> {
         let session = slf.session.clone();
         pyo3_asyncio::tokio::future_into_py(py, async move {
             let res = session.query(query_str, &[]).await.unwrap();
