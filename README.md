@@ -5,6 +5,7 @@
 3. Enter the virtual env via `. ~/local/venv/bin/activate`
 4. Run:
  ```bash
+  cargo build
   pip install --user maturin
   mkdir -p ~/local/venv
   virtualenv ~/local/venv
