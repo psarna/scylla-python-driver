@@ -1,4 +1,5 @@
 use pyo3::prelude::*;
+use pyo3::py_run;
 
 use scylla::transport::session;
 use scylla::SessionBuilder;
@@ -60,8 +61,13 @@ impl Session {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn better_python_driver(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<Cluster>()?;
-    m.add_class::<Session>()?;
+fn scylla(py: Python, m: &PyModule) -> PyResult<()> {
+    let cluster_m = PyModule::new(py, "cluster")?;
+    cluster_m.add_class::<Cluster>()?;
+    cluster_m.add_class::<Session>()?;
+    // Hacky solution for being able to import from scylla.cluster.
+    // Source: https://github.com/PyO3/pyo3/issues/1517#issuecomment-808664021
+    py_run!(py, cluster_m, "import sys; sys.modules['scylla.cluster'] = cluster_m");
+    m.add_submodule(cluster_m)?;
     Ok(())
 }
